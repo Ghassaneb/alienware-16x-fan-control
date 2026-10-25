@@ -126,6 +126,11 @@ between the points you draw. Hover a button for a summary, or click the
 pencil icon next to the "Presets" heading to open the curve editor
 (drag points, click to add, double-click to remove).
 
+The last active preset is remembered in
+`~/.config/alienware-16x-fan-control/state.json` and re-applied when the app
+starts again, including its curve. Auto is remembered too and performs no
+writes.
+
 Edits are saved to `~/.config/alienware-16x-fan-control/presets.json`:
 
 ```json

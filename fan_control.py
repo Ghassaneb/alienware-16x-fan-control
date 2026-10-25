@@ -295,6 +295,7 @@ PRESET_DEFAULTS = {
 
 CONFIG_DIR  = os.path.join(GLib.get_user_config_dir(), 'alienware-16x-fan-control')
 CONFIG_PATH = os.path.join(CONFIG_DIR, 'presets.json')
+STATE_PATH  = os.path.join(CONFIG_DIR, 'state.json')
 
 
 def clamp_curve(points):
@@ -406,6 +407,26 @@ def save_presets_to_file(presets):
         pass
 
 
+def load_last_preset():
+    try:
+        with open(STATE_PATH) as f:
+            key = json.load(f).get('last_preset')
+    except (OSError, ValueError, AttributeError):
+        return 'auto'
+    return key if key in PRESET_ORDER else 'auto'
+
+
+def save_last_preset(key):
+    os.makedirs(CONFIG_DIR, exist_ok=True)
+    tmp = STATE_PATH + '.tmp'
+    try:
+        with open(tmp, 'w') as f:
+            json.dump({'last_preset': key}, f)
+        os.replace(tmp, STATE_PATH)
+    except OSError:
+        pass
+
+
 class FanApp(Adw.Application):
     def __init__(self):
         super().__init__(application_id='com.hbwal.fancontrol')
@@ -415,7 +436,7 @@ class FanApp(Adw.Application):
         self._updating = False
         self._pending = {}
         self.presets = load_presets()
-        self.current_preset = 'auto'
+        self.current_preset = load_last_preset()
         self.curve_active = False
         self.last_applied = ()
         self.connect('shutdown', self.on_shutdown)
@@ -596,6 +617,7 @@ class FanApp(Adw.Application):
         self.update_preset_tooltips()
         self.update_preset_summary()
         self.check_environment()
+        self.restore_last_preset()
         self.update_sensors()
         GLib.timeout_add(2000, self.update_sensors)
 
@@ -612,6 +634,24 @@ class FanApp(Adw.Application):
     def show_error(self, msg):
         self.banner.set_title(msg)
         self.banner.set_revealed(True)
+
+    def restore_last_preset(self):
+        """Re-apply the preset that was active when the app last closed."""
+        key = self.current_preset
+        p = self.presets.get(key)
+        if not p:
+            self.current_preset = 'auto'
+            return
+        self.mode_badge.set_label(p['label'])
+        self.update_preset_summary()
+        if not p.get('cpu_curve'):
+            return
+        ok, err = run_helper('profile', p['profile'])
+        if not ok:
+            self.show_error(err)
+            return
+        self.curve_active = True
+        self.apply_curve(force=True)
 
     def set_manual(self):
         for b in self.preset_btns.values():
@@ -648,6 +688,7 @@ class FanApp(Adw.Application):
         self.manual_mode = False
         self.current_preset = key
         self.last_applied = ()
+        save_last_preset(key)
 
         p = self.presets[key]
         self.mode_badge.set_label(p['label'])
