@@ -1,0 +1,302 @@
+/* Alienware 16X Aurora — Legend dark theme */
+
+window, window.background {
+  background-color: #08090B;
+  color: #E8EEF5;
+}
+
+toolbarview {
+  background-color: #08090B;
+}
+
+headerbar {
+  background: #08090B;
+  background-image: none;
+  border-bottom: 1px solid rgba(0, 229, 255, 0.1);
+  box-shadow: none;
+  min-height: 36px;
+}
+
+headerbar .title,
+headerbar .subtitle {
+  color: #8A97A6;
+  font-size: 11px;
+}
+
+/* === Cards === */
+.aw-card {
+  background-color: #101318;
+  background-image: linear-gradient(180deg, #151A21 0%, #101318 100%);
+  border: 1px solid #232B36;
+  border-top-color: rgba(0, 229, 255, 0.14);
+  border-radius: 6px;
+}
+
+/* === Typography === */
+.aw-label {
+  color: #8A97A6;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+.aw-brand {
+  color: #E8EEF5;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 4px;
+}
+
+.aw-subbrand {
+  color: #8A97A6;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+}
+
+.aw-value {
+  font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;
+  color: #E8EEF5;
+}
+
+.aw-accent {
+  color: #00E5FF;
+}
+
+/* === Tags === */
+.aw-tag {
+  font-family: "DejaVu Sans Mono", "Liberation Mono", monospace;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 3px;
+  border: 1px solid #232B36;
+  background-color: rgba(255, 255, 255, 0.03);
+  color: #E8EEF5;
+}
+
+.aw-tag.success {
+  color: #4ADE80;
+  border-color: rgba(74, 222, 128, 0.35);
+  background-color: rgba(74, 222, 128, 0.07);
+}
+
+.aw-tag.warning {
+  color: #FBBF24;
+  border-color: rgba(251, 191, 36, 0.35);
+  background-color: rgba(251, 191, 36, 0.07);
+}
+
+.aw-tag.error {
+  color: #F87171;
+  border-color: rgba(248, 113, 113, 0.35);
+  background-color: rgba(248, 113, 113, 0.07);
+}
+
+/* === Segmented control === */
+.aw-segmented button {
+  border-radius: 0;
+  border: 1px solid #232B36;
+  margin: 0 -1px 0 0;
+  background-color: #101318;
+  color: #8A97A6;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  padding: 6px 2px;
+  min-height: 0;
+  box-shadow: none;
+  text-shadow: none;
+  outline: none;
+}
+
+.aw-segmented button:first-child {
+  border-radius: 4px 0 0 4px;
+  margin-left: 0;
+}
+
+.aw-segmented button:last-child {
+  border-radius: 0 4px 4px 0;
+  margin-right: 0;
+}
+
+.aw-segmented button:hover {
+  background-color: #1C232C;
+  color: #E8EEF5;
+}
+
+.aw-segmented button.suggested-action {
+  background-color: #00E5FF;
+  color: #08090B;
+  font-weight: 700;
+  border-color: #00E5FF;
+}
+
+/* StackSwitcher segmented */
+stackswitcher.aw-segmented button {
+  border-radius: 0;
+  border: 1px solid #232B36;
+  margin: 0 -1px 0 0;
+  background-color: #101318;
+  color: #8A97A6;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 14px;
+  min-height: 0;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+stackswitcher.aw-segmented button:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+stackswitcher.aw-segmented button:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+stackswitcher.aw-segmented button:checked {
+  background-color: #00E5FF;
+  color: #08090B;
+  font-weight: 700;
+  border-color: #00E5FF;
+}
+
+stackswitcher.aw-segmented button:hover:not(:checked) {
+  background-color: #1C232C;
+  color: #E8EEF5;
+}
+
+/* === Sliders === */
+scale trough {
+  min-height: 4px;
+  background-color: #1C232C;
+  border-radius: 2px;
+  border: none;
+}
+
+scale highlight {
+  min-height: 4px;
+  border-radius: 2px;
+  border: none;
+}
+
+scale slider {
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 2px;
+  box-shadow: none;
+  min-width: 0;
+  min-height: 0;
+}
+
+.aw-slider-cpu highlight { background-color: #00E5FF; }
+.aw-slider-cpu slider   { background-color: #00E5FF; }
+
+.aw-slider-gpu highlight { background-color: #FF2D78; }
+.aw-slider-gpu slider   { background-color: #FF2D78; }
+
+scale mark {
+  color: rgba(138, 151, 166, 0.55);
+  font-size: 9px;
+}
+
+/* === Chart cards === */
+.aw-chart {
+  background-color: #0D1015;
+  border: 1px solid #232B36;
+  border-radius: 4px;
+}
+
+/* === Banner === */
+banner {
+  background: rgba(220, 38, 38, 0.12);
+  color: #FCA5A5;
+}
+
+banner label {
+  color: #FCA5A5;
+}
+
+/* === Buttons === */
+button.suggested-action {
+  background-color: #00E5FF;
+  color: #08090B;
+  font-weight: 600;
+  border: none;
+  border-radius: 4px;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.18);
+}
+
+button.suggested-action:hover {
+  background-color: #33EAFF;
+}
+
+button.flat {
+  color: #8A97A6;
+  box-shadow: none;
+}
+
+button.flat:hover {
+  color: #E8EEF5;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+button.aw-edit {
+  color: #8A97A6;
+  padding: 4px;
+}
+
+button.aw-edit:hover {
+  color: #00E5FF;
+}
+
+button.aw-reset {
+  color: #8A97A6;
+  font-size: 11px;
+}
+
+button.aw-reset:hover {
+  color: #F87171;
+}
+
+/* === Dim labels (override libadwaita opacity) === */
+.dim-label, label.dim-label {
+  color: #8A97A6;
+  opacity: 1;
+}
+
+.caption {
+  font-size: 11px;
+}
+
+/* === DropDown === */
+dropdown > button {
+  background-color: #151A21;
+  border: 1px solid #232B36;
+  border-radius: 4px;
+  color: #E8EEF5;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+dropdown > button:hover {
+  background-color: #1C232C;
+}
+
+/* === Scrollbar === */
+scrollbar {
+  background: transparent;
+  border: none;
+}
+
+scrollbar slider {
+  background-color: #232B36;
+  border-radius: 3px;
+  min-width: 6px;
+}
+
+scrollbar slider:hover {
+  background-color: #3A4556;
+}

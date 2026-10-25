@@ -7,11 +7,35 @@ achieved through reverse engineering of the ACPI/WMI interface.
 
 
 
+## This fork
+
+Forked from [Hugo2049/alienware-16x-fan-control](https://github.com/Hugo2049/alienware-16x-fan-control),
+which contains the original ACPI reverse engineering and protocol discovery.
+Licensed under GPL-2.0, same as upstream. All upstream credits below still apply.
+
+Changes in this fork:
+
+- Ubuntu/Debian support with an idempotent `install.sh`: dependencies,
+  `acpi_call` boot loading, a scoped NOPASSWD sudoers rule for the helper, and
+  a desktop entry.
+- Sensor discovery by hwmon name instead of hardcoded indices; CPU/GPU
+  temperatures and both fan tachometers come from `alienware_wmi`.
+- Per-preset temperature → fan curves, edited on a draggable chart
+  (`curve_editor.py`) and persisted to
+  `~/.config/alienware-16x-fan-control/presets.json`.
+- A 2 s enforcement loop with 3-point hysteresis, a 90 °C full-speed safety
+  override, and automatic hand-back to firmware control on exit.
+- Single-instance behaviour: launching again focuses the existing window.
+- Alienware "Legend" dark theme (`style.css`) and sliders that mirror actual
+  fan RPM.
+- Hardened helper: argument validation, ACPI error surfacing, and null-byte
+  safe result parsing.
+
 ## Hardware
-- Machine: Alienware 16X Aurora AC16251
+- Machine: Alienware 16X Aurora AC16251 / 16 Aurora AC16250
 - CPU: Intel Core Ultra 9 275HX
-- GPU: NVIDIA GeForce RTX 5070 Laptop
-- Tested on: Arch Linux, kernel 6.18.24-1-lts
+- GPU: NVIDIA GeForce RTX 5070 / 5060 Laptop
+- Tested on: Arch Linux kernel 6.18.24-1-lts, Ubuntu 26.04 kernel 7.0
 
 ## How it works
 
@@ -43,6 +67,9 @@ Where SPEED is a hex value from 0x00 (0%) to 0x64 (100%).
 
 ## Dependencies
 
+Ubuntu / Debian:
+sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-4.0 gir1.2-adw-1 acpi-call-dkms
+
 Arch Linux:
 sudo pacman -S acpi_call-lts python-gobject gtk4 libadwaita
 
@@ -54,16 +81,34 @@ echo 'acpi_call' | sudo tee /etc/modules-load.d/acpi_call.conf
 
 ## Installation
 
+Ubuntu / Debian (recommended):
+
 git clone https://github.com/Hugo2049/alienware-16x-fan-control
 cd alienware-16x-fan-control
+sudo ./install.sh
 
-Add sudoers rule:
-echo "$USER ALL=(ALL) NOPASSWD: $(pwd)/fan_helper.sh" | sudo tee /etc/sudoers.d/fancontroller
-sudo chmod 440 /etc/sudoers.d/fancontroller
+The installer installs the GTK4/libadwaita dependencies, loads `acpi_call`
+and enables it at boot, grants passwordless sudo for the helper only, and
+adds a "Fan Control" entry to the application menu.
+
+Arch Linux:
+
+sudo pacman -S acpi_call-lts python-gobject gtk4 libadwaita
+sudo modprobe acpi_call
+echo 'acpi_call' | sudo tee /etc/modules-load.d/acpi_call.conf
 chmod +x fan_helper.sh
 
+Add sudoers rule:
+
+echo "$USER ALL=(ALL) NOPASSWD: $(pwd)/fan_helper.sh" | sudo tee /etc/sudoers.d/fancontroller
+sudo chmod 440 /etc/sudoers.d/fancontroller
+
 Run:
-python fan_control.py
+
+python3 fan_control.py
+
+The app is single-instance: launching it again (terminal or app menu) focuses
+the existing window instead of opening a second copy.
 
 ## CLI Usage
 
@@ -71,6 +116,42 @@ sudo ./fan_helper.sh cpu 75
 sudo ./fan_helper.sh gpu 50
 sudo ./fan_helper.sh both 80 60
 sudo ./fan_helper.sh profile performance
+
+## Presets
+
+Each preset is a pair of temperature→fan curves (CPU and GPU) plus a
+firmware thermal profile. Selecting a preset hands the fans to the curve:
+temperatures are sampled every 2 seconds and fan speed is interpolated
+between the points you draw. Hover a button for a summary, or click the
+pencil icon next to the "Presets" heading to open the curve editor
+(drag points, click to add, double-click to remove).
+
+Edits are saved to `~/.config/alienware-16x-fan-control/presets.json`:
+
+```json
+{
+  "balanced": {
+    "profile": "balanced",
+    "cpu_curve": [[35, 25], [50, 35], [65, 55], [80, 80], [92, 100]],
+    "gpu_curve": [[35, 25], [50, 35], [65, 55], [80, 80], [92, 100]]
+  }
+}
+```
+
+Each curve point is `[temperature °C, fan speed %]`, sorted by temperature
+(30–100 °C, up to 8 points). `profile` is one of `quiet`, `balanced`,
+`performance`, `gameshift`.
+
+Safety behaviour:
+
+- at 90 °C or above, both fans are forced to 100% regardless of the curve;
+- speeds are only rewritten when the target moves by 3 points, so the EC is
+  not hammered between samples;
+- closing the app (or selecting Auto) returns the fans to firmware control;
+- Auto has no curve and always follows firmware.
+
+Old configs using fixed `"cpu": 50, "gpu": 50` values are migrated to a flat
+curve at that speed.
 
 ## Discovery Method
 
