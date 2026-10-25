@@ -174,4 +174,5 @@ Claude: https://claude.ai
 Anthropic: https://anthropic.com
 
 ## License
-GPL-2.0
+
+GPL-2.0 — see [LICENSE](LICENSE). This fork keeps the upstream license.
