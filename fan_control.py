@@ -803,7 +803,7 @@ class FanApp(Adw.Application):
         dialog = Adw.Dialog()
         dialog.set_title('Edit preset curves')
         dialog.set_content_width(560)
-        dialog.set_content_height(620)
+        dialog.set_content_height(680)
 
         tv = Adw.ToolbarView()
         hb = Adw.HeaderBar()
@@ -827,10 +827,10 @@ class FanApp(Adw.Application):
         content.set_margin_top(10)
         content.set_margin_bottom(16)
 
-        hint = Gtk.Label(label='Fan speed follows temperature. Drag points, click to add, double-click to remove.')
+        hint = Gtk.Label(label='Drag points · click to add · double-click to remove.')
         hint.add_css_class('aw-label')
         hint.set_wrap(True)
-        hint.set_halign(Gtk.Align.START)
+        hint.set_xalign(0)
         content.append(hint)
 
         switcher = Gtk.StackSwitcher(stack=stack)
@@ -901,15 +901,18 @@ class FanApp(Adw.Application):
 
         content.append(stack)
 
-        note = Gtk.Label(label='Auto follows firmware control and has no curve.')
+        note = Gtk.Label(label='Auto follows firmware control.')
         note.add_css_class('aw-label')
-        note.set_halign(Gtk.Align.START)
+        note.set_xalign(0)
         note.set_wrap(True)
         content.append(note)
 
         footer = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         footer.set_halign(Gtk.Align.END)
-        footer.set_margin_top(4)
+        footer.set_margin_start(12)
+        footer.set_margin_end(12)
+        footer.set_margin_bottom(12)
+        footer.set_margin_top(8)
         cancel_btn = Gtk.Button(label='Cancel')
         cancel_btn.add_css_class('flat')
         cancel_btn.connect('clicked', lambda b: dialog.close())
@@ -918,7 +921,7 @@ class FanApp(Adw.Application):
         save_btn.connect('clicked', lambda b: self._on_edit_save(dialog, widgets))
         footer.append(cancel_btn)
         footer.append(save_btn)
-        content.append(footer)
+        tv.add_bottom_bar(footer)
 
         sw.set_child(content)
         tv.set_content(sw)
