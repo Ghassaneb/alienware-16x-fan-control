@@ -198,7 +198,7 @@ scale slider {
 .aw-slider-gpu slider   { background-color: #FF2D78; }
 
 scale mark {
-  color: rgba(138, 151, 166, 0.55);
+  color: rgba(138, 151, 166, 0.8);
   font-size: 9px;
 }
 

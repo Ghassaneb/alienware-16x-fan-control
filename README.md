@@ -3,9 +3,12 @@
 A fan speed controller for the Alienware 16X Aurora (AC16251) on Linux,
 achieved through reverse engineering of the ACPI/WMI interface.
 
-<img width="918" height="795" alt="image" src="https://github.com/user-attachments/assets/4e1d98ca-fec4-41cd-a11b-a1cf585dfed1" />
+![Fan Control main window](docs/main.png)
 
+Each preset is a temperature → fan speed curve per fan. Curves are edited by
+dragging points on a chart:
 
+![Edit preset curves dialog](docs/curves.png)
 
 ## This fork
 

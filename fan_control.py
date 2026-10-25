@@ -337,26 +337,38 @@ def interp_curve(points, temp):
     return points[-1][1]
 
 
+def curve_desc(curve):
+    return f'{curve[0][0]}–{curve[-1][0]} °C, {curve[0][1]}–{curve[-1][1]}%'
+
+
 def preset_tooltip(p):
     prof = PROFILE_LABELS.get(p['profile'], 'Balanced')
     c = p.get('cpu_curve')
     if not c:
-        return f'Firmware automatic control ({prof} profile)'
-    return (f"CPU curve {c[0][0]}–{c[-1][0]} °C → {c[0][1]}–{c[-1][1]}%"
-            f" · enforced live · {prof} profile")
+        return f'Firmware control · {prof} profile'
+    g = p.get('gpu_curve') or c
+    if g == c:
+        return f'Curve {curve_desc(c)} · enforced live · {prof} profile'
+    return (f'CPU curve {curve_desc(c)} · GPU curve {curve_desc(g)}'
+            f' · enforced live · {prof} profile')
 
 
-def format_preset_summary(label, p):
+def format_preset_summary(p):
     prof = PROFILE_LABELS.get(p['profile'], 'Balanced')
     c = p.get('cpu_curve')
     if not c:
-        return f'{label} — firmware automatic ({prof} profile)'
+        return f'Firmware control · {prof} profile'
     g = p.get('gpu_curve') or c
     if g == c:
-        return (f'{label} — curve {c[0][0]}–{c[-1][0]} °C · '
-                f'{c[0][1]}→{c[-1][1]}% · {prof} profile')
-    return (f'{label} — CPU {c[0][1]}→{c[-1][1]}% · GPU {g[0][1]}→{g[-1][1]}%'
-            f' · {prof} profile')
+        return f'Curve {curve_desc(c)} · {prof} profile'
+    c_ends = (c[0][0], c[-1][0], c[0][1], c[-1][1])
+    g_ends = (g[0][0], g[-1][0], g[0][1], g[-1][1])
+    if c_ends == g_ends:
+        return f'Curve {curve_desc(c)} · {prof} profile'
+    if (c[0][0], c[-1][0]) == (g[0][0], g[-1][0]):
+        return (f'Curve {c[0][0]}–{c[-1][0]} °C · CPU {c[0][1]}–{c[-1][1]}%'
+                f' · GPU {g[0][1]}–{g[-1][1]}% · {prof} profile')
+    return f'CPU {curve_desc(c)} · GPU {curve_desc(g)} · {prof} profile'
 
 
 def load_presets():
@@ -489,6 +501,7 @@ class FanApp(Adw.Application):
         tstack = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
         tstack.set_vexpand(True)
         tstack.set_valign(Gtk.Align.CENTER)
+        tstack.set_hexpand(True)
         t1 = Gtk.Label(label='ALIENWARE')
         t1.set_halign(Gtk.Align.START)
         t1.add_css_class('aw-brand')
@@ -605,7 +618,6 @@ class FanApp(Adw.Application):
         self.preset_summary.set_margin_end(12)
         self.preset_summary.set_margin_bottom(12)
         self.preset_summary.set_halign(Gtk.Align.START)
-        self.preset_summary.set_wrap(True)
         pcard.append(self.preset_summary)
 
         root.append(pcard)
@@ -781,7 +793,7 @@ class FanApp(Adw.Application):
             return
         key = self.current_preset
         p = self.presets.get(key, PRESET_DEFAULTS.get(key, PRESET_DEFAULTS['balanced']))
-        self.preset_summary.set_label(format_preset_summary(p['label'], p))
+        self.preset_summary.set_label(format_preset_summary(p))
 
     def open_edit_dialog(self, btn):
         if CurveEditor is None:
@@ -791,11 +803,15 @@ class FanApp(Adw.Application):
         dialog = Adw.Dialog()
         dialog.set_title('Edit preset curves')
         dialog.set_content_width(560)
-        dialog.set_content_height(720)
+        dialog.set_content_height(620)
 
         tv = Adw.ToolbarView()
         hb = Adw.HeaderBar()
-        hb.set_show_title(False)
+        dlg_title = Gtk.Label(label='Edit preset curves')
+        dlg_title.add_css_class('heading')
+        dlg_title.set_hexpand(True)
+        dlg_title.set_halign(Gtk.Align.CENTER)
+        hb.set_title_widget(dlg_title)
         tv.add_top_bar(hb)
 
         stack = Gtk.Stack()
