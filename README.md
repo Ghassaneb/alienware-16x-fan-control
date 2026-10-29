@@ -5,6 +5,12 @@ achieved through reverse engineering of the ACPI/WMI interface.
 
 ![Fan Control main window](docs/main.png)
 
+The chassis tint follows the selected preset — Quiet, Balanced, Performance
+and Game Shift each get their own surface colour. Gauges and slider fills
+brighten with fan speed while keeping the CPU cyan / GPU magenta identity:
+
+![Fan Control on the Performance preset](docs/performance.png)
+
 Each preset is a temperature → fan speed curve per fan. Curves are edited by
 dragging points on a chart:
 
@@ -29,8 +35,9 @@ Changes in this fork:
 - A 2 s enforcement loop with 3-point hysteresis, a 90 °C full-speed safety
   override, and automatic hand-back to firmware control on exit.
 - Single-instance behaviour: launching again focuses the existing window.
-- Alienware "Legend" dark theme (`style.css`) and sliders that mirror actual
-  fan RPM.
+- Alienware "Legend" dark theme (`style.css`) with a per-preset chassis tint,
+  gauges and sliders that brighten with fan speed, and slider positions that
+  mirror actual RPM.
 - Hardened helper: argument validation, ACPI error surfacing, and null-byte
   safe result parsing.
 

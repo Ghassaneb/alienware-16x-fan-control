@@ -3,18 +3,104 @@
 window, window.background {
   background-color: #08090B;
   color: #E8EEF5;
+  transition: background-color 200ms ease;
 }
 
-toolbarview {
+/* === Theme: Auto (neutral graphite) === */
+window.theme-auto, window.theme-auto.background,
+.theme-auto toolbarview {
   background-color: #08090B;
 }
 
-headerbar {
+.theme-auto headerbar {
   background: #08090B;
-  background-image: none;
   border-bottom: 1px solid rgba(0, 229, 255, 0.1);
+}
+
+.theme-auto .aw-card {
+  background-color: #101318;
+  background-image: linear-gradient(180deg, #151A21 0%, #101318 100%);
+  border: 1px solid #232B36;
+  border-top-color: rgba(0, 229, 255, 0.14);
+}
+
+/* === Theme: Quiet (cool teal/slate) === */
+window.theme-quiet, window.theme-quiet.background,
+.theme-quiet toolbarview {
+  background-color: #06100F;
+}
+
+.theme-quiet headerbar {
+  background: #06100F;
+  border-bottom: 1px solid rgba(45, 212, 191, 0.15);
+}
+
+.theme-quiet .aw-card {
+  background-color: #0E1A18;
+  background-image: linear-gradient(180deg, #12201E 0%, #0E1A18 100%);
+  border: 1px solid #1E3A35;
+  border-top-color: rgba(45, 212, 191, 0.18);
+}
+
+/* === Theme: Balanced (deep blue) === */
+window.theme-balanced, window.theme-balanced.background,
+.theme-balanced toolbarview {
+  background-color: #060D14;
+}
+
+.theme-balanced headerbar {
+  background: #060D14;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+}
+
+.theme-balanced .aw-card {
+  background-color: #0D1722;
+  background-image: linear-gradient(180deg, #111E2C 0%, #0D1722 100%);
+  border: 1px solid #1E3A5F;
+  border-top-color: rgba(56, 189, 248, 0.18);
+}
+
+/* === Theme: Performance (warm ember) === */
+window.theme-performance, window.theme-performance.background,
+.theme-performance toolbarview {
+  background-color: #120C07;
+}
+
+.theme-performance headerbar {
+  background: #120C07;
+  border-bottom: 1px solid rgba(251, 146, 60, 0.15);
+}
+
+.theme-performance .aw-card {
+  background-color: #1C1409;
+  background-image: linear-gradient(180deg, #261C0E 0%, #1C1409 100%);
+  border: 1px solid #3D2817;
+  border-top-color: rgba(251, 146, 60, 0.18);
+}
+
+/* === Theme: Game Shift (deep violet) === */
+window.theme-gameshift, window.theme-gameshift.background,
+.theme-gameshift toolbarview {
+  background-color: #0C0611;
+}
+
+.theme-gameshift headerbar {
+  background: #0C0611;
+  border-bottom: 1px solid rgba(192, 132, 252, 0.15);
+}
+
+.theme-gameshift .aw-card {
+  background-color: #171022;
+  background-image: linear-gradient(180deg, #1F1630 0%, #171022 100%);
+  border: 1px solid #2D1B4E;
+  border-top-color: rgba(192, 132, 252, 0.18);
+}
+
+headerbar {
+  background-image: none;
   box-shadow: none;
   min-height: 36px;
+  transition: background-color 200ms ease, border-color 200ms ease;
 }
 
 headerbar .title,
@@ -30,6 +116,7 @@ headerbar .subtitle {
   border: 1px solid #232B36;
   border-top-color: rgba(0, 229, 255, 0.14);
   border-radius: 6px;
+  transition: background-color 200ms ease, border-color 200ms ease, background-image 200ms ease;
 }
 
 /* === Typography === */
@@ -196,6 +283,37 @@ scale slider {
 
 .aw-slider-gpu highlight { background-color: #FF2D78; }
 .aw-slider-gpu slider   { background-color: #FF2D78; }
+
+/* === Slider intensity levels === */
+/* lvl-0 (0-20%): dimmed */
+.aw-slider-cpu.lvl-0 highlight { background-color: #1E7F8A; }
+.aw-slider-cpu.lvl-0 slider   { background-color: #1E7F8A; }
+.aw-slider-gpu.lvl-0 highlight { background-color: #8A1E45; }
+.aw-slider-gpu.lvl-0 slider   { background-color: #8A1E45; }
+
+/* lvl-1 (20-40%) */
+.aw-slider-cpu.lvl-1 highlight { background-color: #1C9CAB; }
+.aw-slider-cpu.lvl-1 slider   { background-color: #1C9CAB; }
+.aw-slider-gpu.lvl-1 highlight { background-color: #AB1C4F; }
+.aw-slider-gpu.lvl-1 slider   { background-color: #AB1C4F; }
+
+/* lvl-2 (40-60%) */
+.aw-slider-cpu.lvl-2 highlight { background-color: #17BCCF; }
+.aw-slider-cpu.lvl-2 slider   { background-color: #17BCCF; }
+.aw-slider-gpu.lvl-2 highlight { background-color: #CF1759; }
+.aw-slider-gpu.lvl-2 slider   { background-color: #CF1759; }
+
+/* lvl-3 (60-80%): near identity */
+.aw-slider-cpu.lvl-3 highlight { background-color: #08D7EE; }
+.aw-slider-cpu.lvl-3 slider   { background-color: #08D7EE; }
+.aw-slider-gpu.lvl-3 highlight { background-color: #F71D6B; }
+.aw-slider-gpu.lvl-3 slider   { background-color: #F71D6B; }
+
+/* lvl-4 (80-100%): bright/white-hot with glow */
+.aw-slider-cpu.lvl-4 highlight { background-color: #26E9FF; }
+.aw-slider-cpu.lvl-4 slider   { background-color: #26E9FF; box-shadow: 0 0 8px rgba(38, 233, 255, 0.4); }
+.aw-slider-gpu.lvl-4 highlight { background-color: #FF5391; }
+.aw-slider-gpu.lvl-4 slider   { background-color: #FF5391; box-shadow: 0 0 8px rgba(255, 83, 145, 0.4); }
 
 scale mark {
   color: rgba(138, 151, 166, 0.8);

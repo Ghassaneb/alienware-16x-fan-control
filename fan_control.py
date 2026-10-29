@@ -23,6 +23,70 @@ APP_DIR   = os.path.dirname(os.path.abspath(__file__))
 CPU_COLOR = (0.0, 0.898, 1.0)       # #00E5FF cyan
 GPU_COLOR = (1.0, 0.176, 0.471)     # #FF2D78 magenta
 MAX_RPM   = 6600
+
+
+def _rgb_to_hsl(r, g, b):
+    """Convert RGB (0-1 floats) to HSL (H degrees, S 0-1, L 0-1)."""
+    mx, mn = max(r, g, b), min(r, g, b)
+    l = (mx + mn) / 2.0
+    if mx == mn:
+        return (0.0, 0.0, l)
+    d = mx - mn
+    s = d / (1.0 - abs(2.0 * l - 1.0))
+    if mx == r:   h = ((g - b) / d) % 6.0
+    elif mx == g: h = (b - r) / d + 2.0
+    else:         h = (r - g) / d + 4.0
+    return (h * 60.0, s, l)
+
+
+def _hsl_to_rgb(h, s, l):
+    """Convert HSL (H degrees, S 0-1, L 0-1) to RGB (0-1 floats)."""
+    h = h % 360.0
+    c = (1.0 - abs(2.0 * l - 1.0)) * s
+    x = c * (1.0 - abs((h / 60.0) % 2.0 - 1.0))
+    m = l - c / 2.0
+    if   h < 60.0:  r1, g1, b1 = c, x, 0.0
+    elif h < 120.0: r1, g1, b1 = x, c, 0.0
+    elif h < 180.0: r1, g1, b1 = 0.0, c, x
+    elif h < 240.0: r1, g1, b1 = 0.0, x, c
+    elif h < 300.0: r1, g1, b1 = x, 0.0, c
+    else:           r1, g1, b1 = c, 0.0, x
+    return (r1 + m, g1 + m, b1 + m)
+
+
+def _lerp(a, b, t):
+    """Linear interpolation between a and b."""
+    return a + (b - a) * max(0.0, min(1.0, t))
+
+
+def gauge_color_at(identity, percent):
+    """Intensity-driven colour: keep identity hue, vary brightness/saturation.
+
+    0-50%:   dimmed/desaturated (still clearly cyan/magenta)
+    50-80%:  ramp up to full identity colour
+    80-100%: white-hot (lighten toward white ~15%), full opacity
+    """
+    p = max(0.0, min(100.0, float(percent)))
+    # Convert identity to HSL
+    h, s_id, l_id = _rgb_to_hsl(*identity)
+    
+    if p <= 50.0:
+        # 0-50%: dimmed/desaturated, ramp up slightly
+        t = p / 50.0
+        s = _lerp(0.60, 0.80, t)
+        l = _lerp(0.30, 0.45, t)
+    elif p <= 80.0:
+        # 50-80%: ramp to full identity
+        t = (p - 50.0) / 30.0
+        s = _lerp(0.80, s_id, t)
+        l = _lerp(0.45, l_id, t)
+    else:
+        # 80-100%: white-hot (lighten toward white)
+        t = (p - 80.0) / 20.0
+        s = 1.0
+        l = _lerp(l_id, min(0.95, l_id + 0.15), t)
+    
+    return _hsl_to_rgb(h, s, l)
 HWMON_DIR = '/sys/class/hwmon'
 
 # hwmon indices are not stable across boots, always look them up by name.
@@ -211,18 +275,26 @@ class FanGauge(Gtk.DrawingArea):
 
         # Progress arc with glow
         if self.percent > 0:
-            r2, g2, b2 = self.color
+            r2, g2, b2 = gauge_color_at(self.color, self.percent)
             arc_end = start + span * self.percent / 100
             
-            # Glow layers
-            for lw, alpha in [(22, 0.08), (19, 0.15), (16, 0.25)]:
+            # Glow intensity scales with percentage (0 at 0%, 1 at 100%)
+            glow_intensity = self.percent / 100.0
+            
+            # Glow layers: thickness and alpha increase with load
+            # Base: (22, 0.08), (19, 0.15), (16, 0.25)
+            # At 100%: (30, 0.28), (27, 0.35), (24, 0.45)
+            for lw_base, alpha_base in [(22, 0.08), (19, 0.15), (16, 0.25)]:
+                lw = lw_base + 8.0 * glow_intensity
+                alpha = alpha_base + 0.20 * glow_intensity
                 cr.set_line_width(lw)
                 cr.set_source_rgba(r2, g2, b2, alpha)
                 cr.arc(cx, cy, r, start, arc_end)
                 cr.stroke()
             
-            # Main arc
-            cr.set_line_width(14)
+            # Main arc: +1px width at 100%
+            arc_width = 14.0 + glow_intensity
+            cr.set_line_width(arc_width)
             cr.set_source_rgba(r2, g2, b2, 0.95)
             cr.arc(cx, cy, r, start, arc_end)
             cr.stroke()
@@ -243,9 +315,9 @@ class FanGauge(Gtk.DrawingArea):
         cr.move_to(cx - e2.width/2 - e2.x_bearing, cy + 12)
         cr.show_text('RPM')
 
-        # Percentage in accent
+        # Percentage in speed colour
         cr.set_font_size(14)
-        cr.set_source_rgb(*self.color)
+        cr.set_source_rgb(*gauge_color_at(self.color, self.percent))
         pt = f'{self.percent}%'
         e3 = cr.text_extents(pt)
         cr.move_to(cx - e3.width/2 - e3.x_bearing, cy + 33)
@@ -466,6 +538,19 @@ class FanApp(Adw.Application):
         except Exception:
             pass
 
+    THEME_CLASSES = [f'theme-{k}' for k in PRESET_ORDER]
+
+    def apply_theme(self, key):
+        """Swap the theme-* CSS class on the application window."""
+        if not hasattr(self, 'win') or self.win is None:
+            return
+        target = f'theme-{key}'
+        for cls in self.THEME_CLASSES:
+            if cls == target:
+                self.win.add_css_class(cls)
+            else:
+                self.win.remove_css_class(cls)
+
     def on_activate(self, app):
         # GApplication routes a second launch into this instance; present the
         # existing window instead of building a duplicate one.
@@ -570,6 +655,10 @@ class FanApp(Adw.Application):
                 self.gpu_gauge  = gauge
                 self.gpu_slider = slider
 
+        # Set initial slider intensity levels (sliders default to value 50 → level 2)
+        self._update_slider_level(self.cpu_slider, 50)
+        self._update_slider_level(self.gpu_slider, 50)
+
         root.append(gbox)
 
         # Presets
@@ -653,9 +742,11 @@ class FanApp(Adw.Application):
         p = self.presets.get(key)
         if not p:
             self.current_preset = 'auto'
+            self.apply_theme('auto')
             return
         self.mode_badge.set_label(p['label'])
         self.update_preset_summary()
+        self.apply_theme(key)
         if not p.get('cpu_curve'):
             return
         ok, err = run_helper('profile', p['profile'])
@@ -672,6 +763,7 @@ class FanApp(Adw.Application):
         self.manual_mode = True
         self.curve_active = False
         self.update_preset_summary()
+        self.apply_theme('auto')
 
     def on_slider(self, scale, which):
         if self._updating:
@@ -701,6 +793,7 @@ class FanApp(Adw.Application):
         self.current_preset = key
         self.last_applied = ()
         save_last_preset(key)
+        self.apply_theme(key)
 
         p = self.presets[key]
         self.mode_badge.set_label(p['label'])
@@ -749,6 +842,15 @@ class FanApp(Adw.Application):
         else:           badge.add_css_class('error')
         badge.set_label(f'{temp}°C' if temp else '--°C')
 
+    def _update_slider_level(self, slider, pct):
+        """Update the intensity level class on a slider based on percentage."""
+        level = min(4, int(pct) // 20)
+        # Remove old level classes
+        for lvl in range(5):
+            slider.remove_css_class(f'lvl-{lvl}')
+        # Add new level class
+        slider.add_css_class(f'lvl-{level}')
+
     def update_sensors(self):
         cpu_rpm  = get_fan_rpm(1)
         gpu_rpm  = get_fan_rpm(2)
@@ -773,6 +875,8 @@ class FanApp(Adw.Application):
 
         self.cpu_gauge.set_value(cpu_pct, cpu_rpm)
         self.gpu_gauge.set_value(gpu_pct, gpu_rpm)
+        self._update_slider_level(self.cpu_slider, cpu_pct)
+        self._update_slider_level(self.gpu_slider, gpu_pct)
         self.update_badge(self.cpu_badge, cpu_temp)
         self.update_badge(self.gpu_badge, gpu_temp)
 
