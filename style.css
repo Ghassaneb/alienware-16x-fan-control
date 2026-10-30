@@ -13,7 +13,9 @@ window.theme-auto, window.theme-auto.background,
 }
 
 .theme-auto headerbar {
-  background: #08090B;
+  background: 
+    linear-gradient(90deg, rgba(0, 229, 255, 0.20) 0%, rgba(0, 229, 255, 0.05) 18%, transparent 32%),
+    #08090B;
   border-bottom: 1px solid rgba(0, 229, 255, 0.1);
 }
 
@@ -31,7 +33,9 @@ window.theme-quiet, window.theme-quiet.background,
 }
 
 .theme-quiet headerbar {
-  background: #06100F;
+  background: 
+    linear-gradient(90deg, rgba(45, 212, 191, 0.20) 0%, rgba(45, 212, 191, 0.05) 18%, transparent 32%),
+    #06100F;
   border-bottom: 1px solid rgba(45, 212, 191, 0.15);
 }
 
@@ -49,7 +53,9 @@ window.theme-balanced, window.theme-balanced.background,
 }
 
 .theme-balanced headerbar {
-  background: #060D14;
+  background: 
+    linear-gradient(90deg, rgba(56, 189, 248, 0.20) 0%, rgba(56, 189, 248, 0.05) 18%, transparent 32%),
+    #060D14;
   border-bottom: 1px solid rgba(56, 189, 248, 0.15);
 }
 
@@ -67,7 +73,9 @@ window.theme-performance, window.theme-performance.background,
 }
 
 .theme-performance headerbar {
-  background: #120C07;
+  background: 
+    linear-gradient(90deg, rgba(251, 146, 60, 0.20) 0%, rgba(251, 146, 60, 0.05) 18%, transparent 32%),
+    #120C07;
   border-bottom: 1px solid rgba(251, 146, 60, 0.15);
 }
 
@@ -85,7 +93,9 @@ window.theme-gameshift, window.theme-gameshift.background,
 }
 
 .theme-gameshift headerbar {
-  background: #0C0611;
+  background: 
+    linear-gradient(90deg, rgba(192, 132, 252, 0.20) 0%, rgba(192, 132, 252, 0.05) 18%, transparent 32%),
+    #0C0611;
   border-bottom: 1px solid rgba(192, 132, 252, 0.15);
 }
 
@@ -99,7 +109,7 @@ window.theme-gameshift, window.theme-gameshift.background,
 headerbar {
   background-image: none;
   box-shadow: none;
-  min-height: 36px;
+  min-height: 68px;
   transition: background-color 200ms ease, border-color 200ms ease;
 }
 
@@ -437,8 +447,10 @@ toolbarview.mode-light,
 }
 
 .mode-light headerbar {
-  background: #F1F4F8;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: 
+    linear-gradient(90deg, rgba(0, 168, 192, 0.12) 0%, transparent 28%),
+    rgba(255, 255, 255, 0.55);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .mode-light headerbar .title,
@@ -470,6 +482,9 @@ window.mode-light.theme-auto toolbarview {
   background-color: #F1F4F8;
 }
 window.mode-light.theme-auto headerbar {
+  background: 
+    linear-gradient(90deg, rgba(0, 168, 192, 0.10) 0%, transparent 28%),
+    rgba(241, 244, 248, 0.7);
   border-bottom-color: rgba(0, 184, 212, 0.12);
 }
 window.mode-light.theme-auto .aw-card {
@@ -482,6 +497,9 @@ window.mode-light.theme-quiet toolbarview {
   background-color: #E9F7F4;
 }
 window.mode-light.theme-quiet headerbar {
+  background: 
+    linear-gradient(90deg, rgba(0, 168, 192, 0.10) 0%, transparent 28%),
+    rgba(233, 247, 244, 0.7);
   border-bottom-color: rgba(45, 212, 191, 0.12);
 }
 window.mode-light.theme-quiet .aw-card {
@@ -494,6 +512,9 @@ window.mode-light.theme-balanced toolbarview {
   background-color: #E9F2FC;
 }
 window.mode-light.theme-balanced headerbar {
+  background: 
+    linear-gradient(90deg, rgba(0, 168, 192, 0.10) 0%, transparent 28%),
+    rgba(233, 242, 252, 0.7);
   border-bottom-color: rgba(56, 189, 248, 0.12);
 }
 window.mode-light.theme-balanced .aw-card {
@@ -506,6 +527,9 @@ window.mode-light.theme-performance toolbarview {
   background-color: #FBF2E5;
 }
 window.mode-light.theme-performance headerbar {
+  background: 
+    linear-gradient(90deg, rgba(0, 168, 192, 0.10) 0%, transparent 28%),
+    rgba(251, 242, 229, 0.7);
   border-bottom-color: rgba(251, 146, 60, 0.12);
 }
 window.mode-light.theme-performance .aw-card {
@@ -518,6 +542,9 @@ window.mode-light.theme-gameshift toolbarview {
   background-color: #F3EDFB;
 }
 window.mode-light.theme-gameshift headerbar {
+  background: 
+    linear-gradient(90deg, rgba(0, 168, 192, 0.10) 0%, transparent 28%),
+    rgba(243, 237, 251, 0.7);
   border-bottom-color: rgba(192, 132, 252, 0.12);
 }
 window.mode-light.theme-gameshift .aw-card {
@@ -534,7 +561,7 @@ window.mode-light.theme-gameshift .aw-card {
 }
 
 .mode-light .aw-subbrand {
-  color: #5F6B7A;
+  color: #4C5A66;
 }
 
 .mode-light .aw-value {
@@ -740,3 +767,17 @@ window.mode-light.theme-gameshift .aw-card {
   background: #FFFFFF;
   border-bottom: 1px solid #D8DFE8;
 }
+/* Mode chip border follows the preset accent */
+.theme-auto .aw-tag        { border-color: rgba(0, 229, 255, 0.35); }
+.theme-quiet .aw-tag       { border-color: rgba(45, 212, 191, 0.55); }
+.theme-balanced .aw-tag    { border-color: rgba(56, 189, 248, 0.55); }
+.theme-performance .aw-tag { border-color: rgba(245, 158, 11, 0.55); }
+.theme-gameshift .aw-tag   { border-color: rgba(167, 139, 250, 0.55); }
+
+.mode-light.theme-auto .aw-tag        { border-color: rgba(0, 168, 192, 0.40); }
+.mode-light.theme-quiet .aw-tag       { border-color: rgba(13, 148, 136, 0.45); }
+.mode-light.theme-balanced .aw-tag    { border-color: rgba(2, 132, 199, 0.40); }
+.mode-light.theme-performance .aw-tag { border-color: rgba(180, 83, 9, 0.45); }
+.mode-light.theme-gameshift .aw-tag   { border-color: rgba(124, 58, 237, 0.40); }
+
+

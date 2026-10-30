@@ -196,42 +196,6 @@ def run_helper(*args):
     return True, ''
 
 
-class HexGlyph(Gtk.DrawingArea):
-    """Angular hexagon glyph for branding"""
-    def __init__(self, size=22):
-        super().__init__()
-        self.set_size_request(size, size)
-        self.set_valign(Gtk.Align.CENTER)
-        if CAIRO_OK:
-            self.set_draw_func(self._draw)
-
-    def _draw(self, widget, cr, width, height):
-        if not CAIRO_OK:
-            return
-        cx, cy = width / 2, height / 2
-        r = min(width, height) / 2 - 1.5
-        # Hexagon vertices (flat-top)
-        verts = []
-        for i in range(6):
-            a = math.pi / 3 * i
-            verts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
-        cr.set_line_width(1.5)
-        cr.set_source_rgba(0, 0.898, 1.0, 0.85)
-        cr.move_to(*verts[0])
-        for v in verts[1:]:
-            cr.line_to(*v)
-        cr.close_path()
-        cr.stroke()
-        # Inner chevron
-        ir = r * 0.42
-        cr.set_line_width(1.5)
-        cr.set_source_rgba(0, 0.898, 1.0, 0.6)
-        cr.move_to(cx - ir, cy - ir * 0.35)
-        cr.line_to(cx, cy + ir * 0.55)
-        cr.line_to(cx + ir, cy - ir * 0.35)
-        cr.stroke()
-
-
 class FanGauge(Gtk.DrawingArea):
     def __init__(self, color, light_color=None, light_percent_color=None):
         super().__init__()
@@ -723,6 +687,7 @@ class FanApp(Adw.Application):
             self.cpu_gauge.set_dark(dark)
         if hasattr(self, 'gpu_gauge'):
             self.gpu_gauge.set_dark(dark)
+        # Update brand mark
 
     def on_activate(self, app):
         # GApplication routes a second launch into this instance; present the
@@ -733,7 +698,7 @@ class FanApp(Adw.Application):
         self._load_css()
         self.win = Adw.ApplicationWindow(application=app)
         self.win.set_title('Fan Control')
-        self.win.set_default_size(500, 600)
+        self.win.set_default_size(500, 520)
         self.win.set_resizable(False)
 
         # Set initial mode class and track system appearance changes
@@ -745,25 +710,13 @@ class FanApp(Adw.Application):
         header.set_show_title(False)
         tb.add_top_bar(header)
 
-        self.banner = Adw.Banner()
-        self.banner.set_revealed(False)
-        tb.add_top_bar(self.banner)
+        # ── Brand mark + wordmark, packed at start of header ──
+        brand_hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        brand_hbox.set_margin_start(10)
 
-        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        root.set_margin_start(16)
-        root.set_margin_end(16)
-        root.set_margin_top(10)
-        root.set_margin_bottom(16)
-
-        # Branding row
-        brand = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        brand.set_margin_bottom(4)
-        glyph = HexGlyph(22)
-        brand.append(glyph)
         tstack = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
         tstack.set_vexpand(True)
         tstack.set_valign(Gtk.Align.CENTER)
-        tstack.set_hexpand(True)
         t1 = Gtk.Label(label='ALIENWARE')
         t1.set_halign(Gtk.Align.START)
         t1.add_css_class('aw-brand')
@@ -772,12 +725,24 @@ class FanApp(Adw.Application):
         t2.add_css_class('aw-subbrand')
         tstack.append(t1)
         tstack.append(t2)
-        brand.append(tstack)
+        brand_hbox.append(tstack)
+        header.pack_start(brand_hbox)
+
+        # ── Mode chip, packed at end (right, before window controls) ──
         self.mode_badge = Gtk.Label(label='Auto')
         self.mode_badge.add_css_class('aw-tag')
         self.mode_badge.set_valign(Gtk.Align.CENTER)
-        brand.append(self.mode_badge)
-        root.append(brand)
+        header.pack_end(self.mode_badge)
+
+        self.banner = Adw.Banner()
+        self.banner.set_revealed(False)
+        tb.add_top_bar(self.banner)
+
+        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        root.set_margin_start(16)
+        root.set_margin_end(16)
+        root.set_margin_top(6)
+        root.set_margin_bottom(16)
 
         # Gauges row
         gbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
