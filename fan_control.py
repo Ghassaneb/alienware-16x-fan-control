@@ -13,6 +13,7 @@ except ImportError:
 try:
     # Needed so Gtk.DrawingArea hands cairo.Context to Python (python3-gi-cairo).
     gi.require_foreign('cairo')
+    import cairo
     CAIRO_OK = True
 except Exception:
     CAIRO_OK = False
@@ -243,84 +244,193 @@ class FanGauge(Gtk.DrawingArea):
     def draw(self, widget, cr, w, h):
         if not CAIRO_OK:
             return
+        cr.new_path()
         cx, cy = w/2, h/2
-        r      = min(w,h)/2 - 20
-        start  = math.pi * 0.75
-        end    = math.pi * 2.25
-        span   = end - start
 
-        # Track ring
-        cr.set_line_width(14)
-        cr.set_line_cap(1)
-        cr.set_source_rgba(0.11, 0.137, 0.173, 1.0)  # #1C232C
-        cr.arc(cx, cy, r, start, end)
+        # Geometry constants
+        TICK_OUTER_R = 68
+        TRACK_OUTER_R = 62
+        TRACK_INNER_R = 52
+        ARC_R = 57
+        LABEL_R = 78
+
+        start = math.pi * 0.75      # 135° lower-left
+        end = math.pi * 2.25        # 405° lower-right
+        span = end - start          # 270°
+
+        # ── 1. Track: 270° arc with clean butt ends (not a full circle) ──
+        track_r = (TRACK_OUTER_R + TRACK_INNER_R) / 2   # 57
+        cr.set_line_width(TRACK_OUTER_R - TRACK_INNER_R) # 10
+        cr.set_line_cap(cairo.LINE_CAP_BUTT)
+        cr.set_source_rgba(0.071, 0.086, 0.106, 1.0)    # #12161B
+        cr.arc(cx, cy, track_r, start, end)
         cr.stroke()
 
-        # Tick marks every 10%
+        # Inner hairline (270°)
         cr.set_line_width(1)
-        for i in range(11):
-            frac = i / 10
-            angle = start + span * frac
-            x1 = cx + (r + 9) * math.cos(angle)
-            y1 = cy + (r + 9) * math.sin(angle)
-            x2 = cx + (r + 15) * math.cos(angle)
-            y2 = cy + (r + 15) * math.sin(angle)
-            if i % 5 == 0:
-                cr.set_source_rgba(0.54, 0.59, 0.65, 0.7)
-            else:
-                cr.set_source_rgba(0.54, 0.59, 0.65, 0.35)
+        cr.set_source_rgba(1, 1, 1, 0.05)
+        cr.arc(cx, cy, TRACK_INNER_R, start, end)
+        cr.stroke()
+
+        # Outer bezel (270°)
+        cr.set_source_rgba(1, 1, 1, 0.03)
+        cr.arc(cx, cy, TRACK_OUTER_R, start, end)
+        cr.stroke()
+
+        # ── Track terminals: 1.2px radial lines at each end (135°/405°) ──
+        cr.set_line_width(1.2)
+        cr.set_line_cap(cairo.LINE_CAP_BUTT)
+        cr.set_source_rgba(0.54, 0.59, 0.65, 0.35)  # dim steel
+        for term_angle in (start, end):
+            x1 = cx + TRACK_INNER_R * math.cos(term_angle)
+            y1 = cy + TRACK_INNER_R * math.sin(term_angle)
+            x2 = cx + TRACK_OUTER_R * math.cos(term_angle)
+            y2 = cy + TRACK_OUTER_R * math.sin(term_angle)
             cr.move_to(x1, y1)
             cr.line_to(x2, y2)
             cr.stroke()
 
-        # Progress arc with glow
-        if self.percent > 0:
-            r2, g2, b2 = gauge_color_at(self.color, self.percent)
-            arc_end = start + span * self.percent / 100
-            
-            # Glow intensity scales with percentage (0 at 0%, 1 at 100%)
-            glow_intensity = self.percent / 100.0
-            
-            # Glow layers: thickness and alpha increase with load
-            # Base: (22, 0.08), (19, 0.15), (16, 0.25)
-            # At 100%: (30, 0.28), (27, 0.35), (24, 0.45)
-            for lw_base, alpha_base in [(22, 0.08), (19, 0.15), (16, 0.25)]:
-                lw = lw_base + 8.0 * glow_intensity
-                alpha = alpha_base + 0.20 * glow_intensity
-                cr.set_line_width(lw)
-                cr.set_source_rgba(r2, g2, b2, alpha)
-                cr.arc(cx, cy, r, start, arc_end)
-                cr.stroke()
-            
-            # Main arc: +1px width at 100%
-            arc_width = 14.0 + glow_intensity
-            cr.set_line_width(arc_width)
-            cr.set_source_rgba(r2, g2, b2, 0.95)
-            cr.arc(cx, cy, r, start, arc_end)
+        # ── 2. Tick ring: 31 positions, labels anchored outward ──
+        cr.set_line_width(1)
+        for i in range(31):
+            rpm = i * 220
+            angle = start + span * i / 30
+            is_major = (i % 5 == 0)
+
+            tick_len = 6 if is_major else 3
+            x1 = cx + TICK_OUTER_R * math.cos(angle)
+            y1 = cy + TICK_OUTER_R * math.sin(angle)
+            x2 = cx + (TICK_OUTER_R - tick_len) * math.cos(angle)
+            y2 = cy + (TICK_OUTER_R - tick_len) * math.sin(angle)
+
+            cr.set_source_rgba(0.54, 0.59, 0.65, 0.75 if is_major else 0.40)
+            cr.move_to(x1, y1)
+            cr.line_to(x2, y2)
             cr.stroke()
 
-        # RPM value - monospace
-        cr.select_font_face('DejaVu Sans Mono', 0, 0)
-        cr.set_font_size(24)
-        cr.set_source_rgba(0.91, 0.93, 0.96, 1)  # #E8EEF5
+            # Labels at 0, 2.2k, 4.4k, 6.6k — anchored outward to clear arc
+            if i in (0, 10, 20, 30):
+                label = "0" if rpm == 0 else f"{rpm/1000:.1f}k"
+                lx = cx + LABEL_R * math.cos(angle)
+                ly = cy + LABEL_R * math.sin(angle)
+                cr.select_font_face('DejaVu Sans',
+                                    cairo.FONT_SLANT_NORMAL,
+                                    cairo.FONT_WEIGHT_NORMAL)
+                cr.set_font_size(8.5)
+                extents = cr.text_extents(label)
+                cr.set_source_rgba(0.54, 0.59, 0.65, 0.8)
+                if i in (0, 10):          # left side → right-aligned
+                    ox = (lx - 3) - extents.x_bearing - extents.width
+                else:                      # right side → left-aligned
+                    ox = (lx + 3) - extents.x_bearing
+                cr.move_to(ox, ly + extents.height / 2)
+                cr.show_text(label)
+
+        # ── 3. Arc: 2° segments with 0.4° overlap, OPAQUE color-blend gradient ──
+        head_color = gauge_color_at(self.color, self.percent)
+        if self.percent > 0:
+            arc_end = start + span * self.percent / 100
+            drawn_span = arc_end - start
+
+            segment_span = math.radians(2)
+            overlap = math.radians(0.4)
+            track_col = (0.071, 0.086, 0.106)  # #12161B
+            angle = start
+            while angle < arc_end:
+                seg_end = min(angle + segment_span, arc_end)
+                seg_centre = (angle + seg_end) / 2.0
+                t = (seg_centre - start) / drawn_span if drawn_span > 0 else 0
+
+                # Blend factor: 0.55 at tail, 1.0 at head
+                blend = 0.55 + 0.45 * t
+
+                # Color = lerp(track, head_color, blend) — always opaque
+                r = track_col[0] + (head_color[0] - track_col[0]) * blend
+                g = track_col[1] + (head_color[1] - track_col[1]) * blend
+                b = track_col[2] + (head_color[2] - track_col[2]) * blend
+
+                # White-lightening at high load (last 15% of arc)
+                if self.percent > 85 and t > 0.85:
+                    lt = (t - 0.85) / 0.15 * 0.1
+                    r = r + (1.0 - r) * lt
+                    g = g + (1.0 - g) * lt
+                    b = b + (1.0 - b) * lt
+
+                # Overlap each segment by 0.4° on each side (harmless when opaque)
+                draw_start = max(start, angle - overlap)
+                draw_end = min(arc_end, seg_end + overlap)
+
+                cr.set_line_width(10)
+                cr.set_line_cap(cairo.LINE_CAP_BUTT)
+                cr.set_source_rgba(r, g, b, 1.0)  # FULLY OPAQUE — no ribbing
+                cr.new_path()
+                cr.arc(cx, cy, ARC_R, draw_start, draw_end)
+                cr.stroke()
+
+                angle = seg_end
+
+            # Localized glow at head: last 12% of drawn arc, two thin layers
+            glow_start = arc_end - drawn_span * 0.12
+            if glow_start > start:
+                gi = self.percent / 100.0
+                for lw, ab in [(13, 0.12), (16, 0.06)]:
+                    cr.set_line_width(lw)
+                    cr.set_line_cap(cairo.LINE_CAP_ROUND)
+                    cr.set_source_rgba(*head_color, ab * gi)
+                    cr.new_path()
+                    cr.arc(cx, cy, ARC_R, glow_start, arc_end)
+                    cr.stroke()
+
+        # ── 4. Tip marker: outside the band at ARC_R+6, only when running ──
+        if self.percent > 0:
+            tip_angle = start + span * self.percent / 100
+            tip_r = ARC_R + 6  # Just outside 10px track, inside tick ring
+            tx = cx + tip_r * math.cos(tip_angle)
+            ty = cy + tip_r * math.sin(tip_angle)
+            # Dark outline (1px ring around 2.1px dot = 3.1px total radius)
+            cr.set_source_rgba(0.031, 0.035, 0.043, 0.9)  # rgba(8,9,11,0.9)
+            cr.new_path()
+            cr.arc(tx, ty, 3.1, 0, 2 * math.pi)
+            cr.fill()
+            # Dot filled with identity colour (near-white at load > 85%)
+            if self.percent > 85:
+                lt = 0.1
+                dot_r = self.color[0] + (1.0 - self.color[0]) * lt
+                dot_g = self.color[1] + (1.0 - self.color[1]) * lt
+                dot_b = self.color[2] + (1.0 - self.color[2]) * lt
+                cr.set_source_rgba(dot_r, dot_g, dot_b, 1.0)
+            else:
+                cr.set_source_rgba(*self.color, 1.0)
+            cr.new_path()
+            cr.arc(tx, ty, 2.1, 0, 2 * math.pi)
+            cr.fill()
+
+        # ── 5. Text hierarchy ──
+        # RPM value (hero)
+        cr.select_font_face('DejaVu Sans Mono',
+                            cairo.FONT_SLANT_NORMAL,
+                            cairo.FONT_WEIGHT_NORMAL)
+        cr.set_font_size(26)
+        cr.set_source_rgba(0.91, 0.93, 0.96, 1)   # #E8EEF5
         t = f'{self.rpm:,}'
-        e = cr.text_extents(t)
-        cr.move_to(cx - e.width/2 - e.x_bearing, cy - 6)
+        extents = cr.text_extents(t)
+        cr.move_to(cx - extents.width/2 - extents.x_bearing, cy - 8)
         cr.show_text(t)
 
-        # RPM label
-        cr.set_font_size(10)
-        cr.set_source_rgba(0.54, 0.59, 0.65, 1)  # #8A97A6
-        e2 = cr.text_extents('RPM')
-        cr.move_to(cx - e2.width/2 - e2.x_bearing, cy + 12)
+        # "RPM" label (small caps, dim steel)
+        cr.set_font_size(9)
+        cr.set_source_rgba(0.54, 0.59, 0.65, 1)   # #8A97A6
+        extents = cr.text_extents('RPM')
+        cr.move_to(cx - extents.width/2 - extents.x_bearing, cy + 8)
         cr.show_text('RPM')
 
-        # Percentage in speed colour
-        cr.set_font_size(14)
-        cr.set_source_rgb(*gauge_color_at(self.color, self.percent))
+        # Percentage in identity colour (constant brightness, >= 4.5:1 on
+        # every preset background — arc carries the load intensity instead)
+        cr.set_font_size(11)
+        cr.set_source_rgb(*self.color)
         pt = f'{self.percent}%'
-        e3 = cr.text_extents(pt)
-        cr.move_to(cx - e3.width/2 - e3.x_bearing, cy + 33)
+        extents = cr.text_extents(pt)
+        cr.move_to(cx - extents.width/2 - extents.x_bearing, cy + 22)
         cr.show_text(pt)
 
 
