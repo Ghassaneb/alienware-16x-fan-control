@@ -418,3 +418,325 @@ scrollbar slider {
 scrollbar slider:hover {
   background-color: #3A4556;
 }
+
+/* ================================================================
+   === LIGHT MODE ===
+   All rules scoped to .mode-light to override dark defaults above.
+   ================================================================ */
+
+/* ── Window & chrome ── */
+window.mode-light,
+window.mode-light.background {
+  background-color: #F1F4F8;
+  color: #1A1F26;
+}
+
+toolbarview.mode-light,
+.mode-light toolbarview {
+  background-color: #F1F4F8;
+}
+
+.mode-light headerbar {
+  background: #F1F4F8;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.mode-light headerbar .title,
+.mode-light headerbar .subtitle {
+  color: #374151;
+}
+
+.mode-light headerbar label,
+.mode-light headerbar .heading {
+  color: #1A1F26;
+}
+
+.mode-light headerbar button {
+  color: #374151;
+}
+
+/* ── Cards ── */
+.mode-light .aw-card {
+  background-color: #FFFFFF;
+  background-image: linear-gradient(180deg, #FFFFFF 0%, #F7F9FC 100%);
+  border: 1px solid #D8DFE8;
+  border-top-color: rgba(0, 0, 0, 0.04);
+}
+
+/* ── Theme tints (light chassis) ── */
+window.mode-light.theme-auto,
+window.mode-light.theme-auto.background,
+window.mode-light.theme-auto toolbarview {
+  background-color: #F1F4F8;
+}
+window.mode-light.theme-auto headerbar {
+  border-bottom-color: rgba(0, 184, 212, 0.12);
+}
+window.mode-light.theme-auto .aw-card {
+  border-top-color: rgba(0, 184, 212, 0.10);
+}
+
+window.mode-light.theme-quiet,
+window.mode-light.theme-quiet.background,
+window.mode-light.theme-quiet toolbarview {
+  background-color: #E9F7F4;
+}
+window.mode-light.theme-quiet headerbar {
+  border-bottom-color: rgba(45, 212, 191, 0.12);
+}
+window.mode-light.theme-quiet .aw-card {
+  border-top-color: rgba(45, 212, 191, 0.10);
+}
+
+window.mode-light.theme-balanced,
+window.mode-light.theme-balanced.background,
+window.mode-light.theme-balanced toolbarview {
+  background-color: #E9F2FC;
+}
+window.mode-light.theme-balanced headerbar {
+  border-bottom-color: rgba(56, 189, 248, 0.12);
+}
+window.mode-light.theme-balanced .aw-card {
+  border-top-color: rgba(56, 189, 248, 0.10);
+}
+
+window.mode-light.theme-performance,
+window.mode-light.theme-performance.background,
+window.mode-light.theme-performance toolbarview {
+  background-color: #FBF2E5;
+}
+window.mode-light.theme-performance headerbar {
+  border-bottom-color: rgba(251, 146, 60, 0.12);
+}
+window.mode-light.theme-performance .aw-card {
+  border-top-color: rgba(251, 146, 60, 0.10);
+}
+
+window.mode-light.theme-gameshift,
+window.mode-light.theme-gameshift.background,
+window.mode-light.theme-gameshift toolbarview {
+  background-color: #F3EDFB;
+}
+window.mode-light.theme-gameshift headerbar {
+  border-bottom-color: rgba(192, 132, 252, 0.12);
+}
+window.mode-light.theme-gameshift .aw-card {
+  border-top-color: rgba(192, 132, 252, 0.10);
+}
+
+/* ── Typography ── */
+.mode-light .aw-label {
+  color: #4B5563;
+}
+
+.mode-light .aw-brand {
+  color: #1A1F26;
+}
+
+.mode-light .aw-subbrand {
+  color: #5F6B7A;
+}
+
+.mode-light .aw-value {
+  color: #1A1F26;
+}
+
+.mode-light .aw-accent {
+  color: #00B8D4;
+}
+
+/* ── Tags / badges ── */
+.mode-light .aw-tag {
+  border-color: #BFC9D6;
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #1A1F26;
+}
+
+.mode-light .aw-tag.success {
+  color: #16A34A;
+  border-color: rgba(22, 163, 74, 0.35);
+  background-color: rgba(22, 163, 74, 0.08);
+}
+
+.mode-light .aw-tag.warning {
+  color: #92400E;
+  border-color: rgba(217, 119, 6, 0.35);
+  background-color: rgba(217, 119, 6, 0.08);
+}
+
+.mode-light .aw-tag.error {
+  color: #DC2626;
+  border-color: rgba(220, 38, 38, 0.35);
+  background-color: rgba(220, 38, 38, 0.08);
+}
+
+/* ── Segmented control ── */
+.mode-light .aw-segmented button {
+  border-color: #D8DFE8;
+  background-color: #FFFFFF;
+  color: #5F6B7A;
+}
+
+.mode-light .aw-segmented button:hover {
+  background-color: #F1F4F8;
+  color: #1A1F26;
+}
+
+.mode-light .aw-segmented button.suggested-action {
+  background-color: #00B8D4;
+  color: #06181C;
+  border-color: #00B8D4;
+}
+
+.mode-light stackswitcher.aw-segmented button {
+  border-color: #D8DFE8;
+  background-color: #FFFFFF;
+  color: #5F6B7A;
+}
+
+.mode-light stackswitcher.aw-segmented button:checked {
+  background-color: #00B8D4;
+  color: #FFFFFF;
+  border-color: #00B8D4;
+}
+
+.mode-light stackswitcher.aw-segmented button:hover:not(:checked) {
+  background-color: #F1F4F8;
+  color: #1A1F26;
+}
+
+/* ── Sliders ── */
+.mode-light scale trough {
+  background-color: #D8DFE8;
+}
+
+.mode-light scale mark {
+  color: rgba(75, 85, 99, 0.9);
+}
+
+.mode-light scale slider {
+  min-width: 14px;
+  min-height: 14px;
+  border: 2px solid #FFFFFF;
+  border-radius: 7px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+}
+
+/* Light slider levels — darker fills for white backgrounds, same hue */
+.mode-light .aw-slider-cpu.lvl-0 highlight { background-color: #0A4A54; }
+.mode-light .aw-slider-cpu.lvl-0 slider   { background-color: #0A4A54; }
+.mode-light .aw-slider-gpu.lvl-0 highlight { background-color: #5A0D29; }
+.mode-light .aw-slider-gpu.lvl-0 slider   { background-color: #5A0D29; }
+
+.mode-light .aw-slider-cpu.lvl-1 highlight { background-color: #0C5C68; }
+.mode-light .aw-slider-cpu.lvl-1 slider   { background-color: #0C5C68; }
+.mode-light .aw-slider-gpu.lvl-1 highlight { background-color: #6F1033; }
+.mode-light .aw-slider-gpu.lvl-1 slider   { background-color: #6F1033; }
+
+.mode-light .aw-slider-cpu.lvl-2 highlight { background-color: #0E6E7C; }
+.mode-light .aw-slider-cpu.lvl-2 slider   { background-color: #0E6E7C; }
+.mode-light .aw-slider-gpu.lvl-2 highlight { background-color: #84133D; }
+.mode-light .aw-slider-gpu.lvl-2 slider   { background-color: #84133D; }
+
+.mode-light .aw-slider-cpu.lvl-3 highlight { background-color: #007A8A; }
+.mode-light .aw-slider-cpu.lvl-3 slider   { background-color: #007A8A; }
+.mode-light .aw-slider-gpu.lvl-3 highlight { background-color: #A01647; }
+.mode-light .aw-slider-gpu.lvl-3 slider   { background-color: #A01647; }
+
+.mode-light .aw-slider-cpu.lvl-4 highlight { background-color: #008899; }
+.mode-light .aw-slider-cpu.lvl-4 slider   { background-color: #008899; box-shadow: 0 0 8px rgba(0, 136, 153, 0.3); }
+.mode-light .aw-slider-gpu.lvl-4 highlight { background-color: #B81952; }
+.mode-light .aw-slider-gpu.lvl-4 slider   { background-color: #B81952; box-shadow: 0 0 8px rgba(184, 25, 82, 0.3); }
+
+/* ── Banner ── */
+.mode-light banner {
+  background: rgba(220, 38, 38, 0.08);
+  color: #B91C1C;
+}
+
+.mode-light banner label {
+  color: #B91C1C;
+}
+
+/* ── Buttons ── */
+.mode-light button.suggested-action {
+  background-color: #00B8D4;
+  color: #06181C;
+  box-shadow: 0 0 16px rgba(0, 184, 212, 0.2);
+}
+
+.mode-light button.suggested-action:hover {
+  background-color: #00C8E4;
+}
+
+.mode-light button.flat {
+  color: #5F6B7A;
+}
+
+.mode-light button.flat:hover {
+  color: #1A1F26;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.mode-light button.aw-edit {
+  color: #5F6B7A;
+}
+
+.mode-light button.aw-edit:hover {
+  color: #00B8D4;
+}
+
+.mode-light button.aw-reset {
+  color: #5F6B7A;
+}
+
+.mode-light button.aw-reset:hover {
+  color: #DC2626;
+}
+
+/* ── Dim labels ── */
+.mode-light .dim-label,
+.mode-light label.dim-label {
+  color: #5F6B7A;
+}
+
+/* ── DropDown ── */
+.mode-light dropdown > button {
+  background-color: #FFFFFF;
+  border-color: #D8DFE8;
+  color: #1A1F26;
+}
+
+.mode-light dropdown > button:hover {
+  background-color: #F7F9FC;
+}
+
+/* ── Scrollbar ── */
+.mode-light scrollbar slider {
+  background-color: #D8DFE8;
+}
+
+.mode-light scrollbar slider:hover {
+  background-color: #B0BAC6;
+}
+
+/* ── Chart cards ── */
+.mode-light .aw-chart {
+  background-color: #F7F9FC;
+  border-color: #D8DFE8;
+}
+
+/* ── Dialog (Edit preset curves) — light counterpart ── */
+.mode-light dialog,
+.mode-light .dialog-background,
+.mode-light AdwDialog,
+.mode-light adw-dialog {
+  background-color: #FFFFFF;
+  color: #1A1F26;
+}
+
+.mode-light dialog headerbar,
+.mode-light .dialog-background headerbar {
+  background: #FFFFFF;
+  border-bottom: 1px solid #D8DFE8;
+}

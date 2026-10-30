@@ -11,6 +11,11 @@ brighten with fan speed while keeping the CPU cyan / GPU magenta identity:
 
 ![Fan Control on the Performance preset](docs/performance.png)
 
+The interface follows the system light/dark appearance; every preset tint,
+gauge, chart and the curve editor has a light variant:
+
+![Fan Control in light mode](docs/light.png)
+
 Each preset is a temperature → fan speed curve per fan. Curves are edited by
 dragging points on a chart:
 
@@ -35,9 +40,9 @@ Changes in this fork:
 - A 2 s enforcement loop with 3-point hysteresis, a 90 °C full-speed safety
   override, and automatic hand-back to firmware control on exit.
 - Single-instance behaviour: launching again focuses the existing window.
-- Alienware "Legend" dark theme (`style.css`) with a per-preset chassis tint,
-  gauges and sliders that brighten with fan speed, and slider positions that
-  mirror actual RPM.
+- Alienware "Legend" theme (`style.css`) with light and dark variants that
+  follow the system appearance, per-preset chassis tints, gauges and sliders
+  that brighten with fan speed, and slider positions that mirror actual RPM.
 - Hardened helper: argument validation, ACPI error surfacing, and null-byte
   safe result parsing.
 

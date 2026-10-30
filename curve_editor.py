@@ -14,18 +14,22 @@ class CurveEditor(Gtk.DrawingArea):
         'changed': (GObject.SignalFlags.RUN_FIRST, None, ())
     }
     
-    def __init__(self, points, color=(0.216, 0.540, 0.867), temp_min=30, temp_max=100):
+    def __init__(self, points, color=(0.216, 0.540, 0.867), temp_min=30, temp_max=100,
+                 light_color=None):
         """Initialize curve editor
         
         Args:
             points: List of [temp, percent] pairs
-            color: RGB tuple for accent color (0-1 range)
+            color: RGB tuple for accent color (0-1 range) — dark mode
+            light_color: RGB tuple for light mode accent (default: same as color)
             temp_min: Minimum temperature (default 30)
             temp_max: Maximum temperature (default 100)
         """
         super().__init__()
         
         self.color = color
+        self.light_color = light_color or color
+        self.dark = True
         self.temp_min = temp_min
         self.temp_max = temp_max
         
@@ -98,6 +102,13 @@ class CurveEditor(Gtk.DrawingArea):
     def set_color(self, color):
         """Set accent color as (r, g, b) floats"""
         self.color = color
+        self.queue_draw()
+    
+    def set_dark(self, dark):
+        """Update mode and redraw with appropriate palette."""
+        if self.dark == dark:
+            return
+        self.dark = dark
         self.queue_draw()
     
     def _get_plot_area(self, width, height):
@@ -277,12 +288,32 @@ class CurveEditor(Gtk.DrawingArea):
         """Draw the curve editor"""
         plot_left, plot_top, plot_width, plot_height = self._get_plot_area(width, height)
         
+        # Select palette based on mode
+        if self.dark:
+            GRID_COL = (0.5, 0.5, 0.5, 0.15)
+            AXIS_COL = (0.5, 0.5, 0.5, 0.3)
+            LABEL_COL = (0.6, 0.6, 0.6, 1)
+            LINE_COLOR = self.color
+            FILL_ALPHA = 0.12
+            POINT_RING = (1, 1, 1, 1)
+            DRAG_BG = (0, 0, 0, 0.7)
+            DRAG_TEXT = (1, 1, 1, 1)
+        else:
+            GRID_COL = (0.353, 0.400, 0.455, 0.18)  # rgba(90,102,116,0.18)
+            AXIS_COL = (0.353, 0.400, 0.455, 0.35)
+            LABEL_COL = (0.373, 0.420, 0.478, 1)    # #5F6B7A
+            LINE_COLOR = self.light_color
+            FILL_ALPHA = 0.10
+            POINT_RING = (0.373, 0.420, 0.478, 0.3)
+            DRAG_BG = (1, 1, 1, 0.95)
+            DRAG_TEXT = (0.102, 0.122, 0.149, 1)    # #1A1F26
+        
         # Background
         cr.set_source_rgba(0, 0, 0, 0)
         cr.paint()
         
         # Grid lines
-        cr.set_source_rgba(0.5, 0.5, 0.5, 0.15)
+        cr.set_source_rgba(*GRID_COL)
         cr.set_line_width(1)
         
         # Vertical grid (every 10°C)
@@ -299,14 +330,14 @@ class CurveEditor(Gtk.DrawingArea):
             cr.line_to(plot_left + plot_width, y)
             cr.stroke()
         
-        # Axis frame (stronger)
-        cr.set_source_rgba(0.5, 0.5, 0.5, 0.3)
+        # Axis frame
+        cr.set_source_rgba(*AXIS_COL)
         cr.set_line_width(1.5)
         cr.rectangle(plot_left, plot_top, plot_width, plot_height)
         cr.stroke()
         
         # Axis labels
-        cr.set_source_rgba(0.6, 0.6, 0.6, 1)
+        cr.set_source_rgba(*LABEL_COL)
         cr.select_font_face("Sans")
         cr.set_font_size(9)
         
@@ -326,7 +357,7 @@ class CurveEditor(Gtk.DrawingArea):
         x_100 = self._temp_to_x(self.temp_max, plot_left, plot_width)
         text_100 = str(self.temp_max)
         extents_100 = cr.text_extents(text_100)
-        cr.set_source_rgba(0.6, 0.6, 0.6, 1)
+        cr.set_source_rgba(*LABEL_COL)
         cr.move_to(x_100 + extents_100.width / 2 + 3, plot_top + plot_height + 14)
         cr.show_text("°C")
         
@@ -339,14 +370,14 @@ class CurveEditor(Gtk.DrawingArea):
             cr.show_text(text)
         
         # Y-axis unit label "%" above 100% tick
-        cr.set_source_rgba(0.6, 0.6, 0.6, 1)
+        cr.set_source_rgba(*LABEL_COL)
         extents_pct = cr.text_extents("%")
         cr.move_to(plot_left - 8 - extents_pct.width, plot_top - 7)
         cr.show_text("%")
         
         # Filled area under curve
         if len(self.points) >= 2:
-            cr.set_source_rgba(*self.color, 0.12)
+            cr.set_source_rgba(*LINE_COLOR, FILL_ALPHA)
             cr.move_to(self._temp_to_x(self.points[0][0], plot_left, plot_width),
                       plot_top + plot_height)
             for temp, percent in self.points:
@@ -360,7 +391,7 @@ class CurveEditor(Gtk.DrawingArea):
         
         # Curve line
         if len(self.points) >= 2:
-            cr.set_source_rgba(*self.color, 1.0)
+            cr.set_source_rgba(*LINE_COLOR, 1.0)
             cr.set_line_width(2.5)
             cr.move_to(self._temp_to_x(self.points[0][0], plot_left, plot_width),
                       self._percent_to_y(self.points[0][1], plot_top, plot_height))
@@ -379,12 +410,12 @@ class CurveEditor(Gtk.DrawingArea):
             radius = 6 if is_active else 4.5
             
             # Background ring
-            cr.set_source_rgba(1, 1, 1, 1)
+            cr.set_source_rgba(*POINT_RING)
             cr.arc(x, y, radius + 1.5, 0, 2 * math.pi)
             cr.fill()
             
             # Filled point
-            cr.set_source_rgba(*self.color, 1.0)
+            cr.set_source_rgba(*LINE_COLOR, 1.0)
             cr.arc(x, y, radius, 0, 2 * math.pi)
             cr.fill()
         
@@ -410,7 +441,7 @@ class CurveEditor(Gtk.DrawingArea):
             pill_width = extents.width + padding * 2
             pill_height = extents.height + padding * 2
             
-            cr.set_source_rgba(0, 0, 0, 0.7)
+            cr.set_source_rgba(*DRAG_BG)
             cr.arc(pill_x + 4, pill_y + 4, 4, math.pi, 1.5 * math.pi)
             cr.arc(pill_x + pill_width - 4, pill_y + 4, 4, 1.5 * math.pi, 2 * math.pi)
             cr.arc(pill_x + pill_width - 4, pill_y + pill_height - 4, 4, 0, 0.5 * math.pi)
@@ -418,7 +449,18 @@ class CurveEditor(Gtk.DrawingArea):
             cr.close_path()
             cr.fill()
             
+            # Border for light mode visibility
+            if not self.dark:
+                cr.set_source_rgba(0.353, 0.400, 0.455, 0.5)
+                cr.set_line_width(1)
+                cr.arc(pill_x + 4, pill_y + 4, 4, math.pi, 1.5 * math.pi)
+                cr.arc(pill_x + pill_width - 4, pill_y + 4, 4, 1.5 * math.pi, 2 * math.pi)
+                cr.arc(pill_x + pill_width - 4, pill_y + pill_height - 4, 4, 0, 0.5 * math.pi)
+                cr.arc(pill_x + 4, pill_y + pill_height - 4, 4, 0.5 * math.pi, math.pi)
+                cr.close_path()
+                cr.stroke()
+            
             # Draw text
-            cr.set_source_rgba(1, 1, 1, 1)
+            cr.set_source_rgba(*DRAG_TEXT)
             cr.move_to(label_x, label_y)
             cr.show_text(text)

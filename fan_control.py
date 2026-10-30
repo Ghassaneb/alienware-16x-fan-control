@@ -21,8 +21,14 @@ except Exception:
 HELPER    = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fan_helper.sh')
 ACPI_CALL = '/proc/acpi/call'
 APP_DIR   = os.path.dirname(os.path.abspath(__file__))
-CPU_COLOR = (0.0, 0.898, 1.0)       # #00E5FF cyan
-GPU_COLOR = (1.0, 0.176, 0.471)     # #FF2D78 magenta
+CPU_COLOR = (0.0, 0.898, 1.0)       # #00E5FF cyan (dark mode)
+GPU_COLOR = (1.0, 0.176, 0.471)     # #FF2D78 magenta (dark mode)
+# Light-mode identity colours (darker, visible on white cards)
+CPU_COLOR_LIGHT = (0.0, 0.722, 0.831)    # #00B8D4
+GPU_COLOR_LIGHT = (0.847, 0.106, 0.376)  # #D81B60
+# Light-mode percentage colours (>= 4.5:1 on white)
+CPU_PERCENT_LIGHT = (0.0, 0.439, 0.498)  # #00707F
+GPU_PERCENT_LIGHT = (0.620, 0.071, 0.271) # #9E1245
 MAX_RPM   = 6600
 
 
@@ -227,18 +233,28 @@ class HexGlyph(Gtk.DrawingArea):
 
 
 class FanGauge(Gtk.DrawingArea):
-    def __init__(self, color):
+    def __init__(self, color, light_color=None, light_percent_color=None):
         super().__init__()
-        self.color   = color
+        self.color = color
+        self.light_color = light_color or color
+        self.light_percent_color = light_percent_color or color
         self.percent = 0
-        self.rpm     = 0
+        self.rpm = 0
+        self.dark = True
         self.set_size_request(170, 170)
         if CAIRO_OK:
             self.set_draw_func(self.draw)
 
     def set_value(self, percent, rpm):
         self.percent = max(0, min(100, percent))
-        self.rpm     = rpm
+        self.rpm = rpm
+        self.queue_draw()
+
+    def set_dark(self, dark):
+        """Update mode and redraw with appropriate palette."""
+        if self.dark == dark:
+            return
+        self.dark = dark
         self.queue_draw()
 
     def draw(self, widget, cr, w, h):
@@ -258,29 +274,61 @@ class FanGauge(Gtk.DrawingArea):
         end = math.pi * 2.25        # 405° lower-right
         span = end - start          # 270°
 
-        # ── 1. Track: 270° arc with clean butt ends (not a full circle) ──
-        track_r = (TRACK_OUTER_R + TRACK_INNER_R) / 2   # 57
-        cr.set_line_width(TRACK_OUTER_R - TRACK_INNER_R) # 10
+        # ── Select palette based on mode ──
+        if self.dark:
+            TRACK_COL = (0.071, 0.086, 0.106)       # #12161B
+            HAIRLINE_IN = (1, 1, 1, 0.05)
+            BEZEL_OUT = (1, 1, 1, 0.03)
+            TERMINAL_COL = (0.54, 0.59, 0.65, 0.35)
+            TICK_MAJ = (0.54, 0.59, 0.65, 0.75)
+            TICK_MIN = (0.54, 0.59, 0.65, 0.40)
+            LABEL_COL = (0.54, 0.59, 0.65, 0.8)
+            RPM_COL = (0.91, 0.93, 0.96, 1)         # #E8EEF5
+            RPM_LBL = (0.54, 0.59, 0.65, 1)         # #8A97A6
+            IDENTITY = self.color
+            PERCENT_COL = self.color
+            TIP_OUTLINE = (0.031, 0.035, 0.043, 0.9)
+            ARC_BASE_COL = TRACK_COL[:3]            # blend into track
+            LIGHTEN_HEAD = True
+        else:
+            TRACK_COL = (0.890, 0.910, 0.937)       # #E3E8EF
+            HAIRLINE_IN = (1, 1, 1, 0.5)
+            BEZEL_OUT = (0, 0, 0, 0.06)
+            TERMINAL_COL = (0.353, 0.400, 0.455, 0.5)
+            TICK_MAJ = (0.353, 0.400, 0.455, 0.85)
+            TICK_MIN = (0.353, 0.400, 0.455, 0.6)
+            LABEL_COL = (0.290, 0.329, 0.392, 1.0)  # #4A545F
+            RPM_COL = (0.102, 0.122, 0.149, 1)      # #1A1F26
+            RPM_LBL = (0.290, 0.329, 0.392, 1)      # #4A545F
+            IDENTITY = self.light_color
+            PERCENT_COL = self.light_percent_color
+            TIP_OUTLINE = (0, 0, 0, 0.75)
+            ARC_BASE_COL = (0.30, 0.35, 0.40)       # darker base for visibility
+            LIGHTEN_HEAD = False
+
+        # ── 1. Track: 270° arc with clean butt ends ──
+        track_r = (TRACK_OUTER_R + TRACK_INNER_R) / 2
+        cr.set_line_width(TRACK_OUTER_R - TRACK_INNER_R)
         cr.set_line_cap(cairo.LINE_CAP_BUTT)
-        cr.set_source_rgba(0.071, 0.086, 0.106, 1.0)    # #12161B
+        cr.set_source_rgba(*TRACK_COL, 1.0)
         cr.arc(cx, cy, track_r, start, end)
         cr.stroke()
 
         # Inner hairline (270°)
         cr.set_line_width(1)
-        cr.set_source_rgba(1, 1, 1, 0.05)
+        cr.set_source_rgba(*HAIRLINE_IN)
         cr.arc(cx, cy, TRACK_INNER_R, start, end)
         cr.stroke()
 
         # Outer bezel (270°)
-        cr.set_source_rgba(1, 1, 1, 0.03)
+        cr.set_source_rgba(*BEZEL_OUT)
         cr.arc(cx, cy, TRACK_OUTER_R, start, end)
         cr.stroke()
 
-        # ── Track terminals: 1.2px radial lines at each end (135°/405°) ──
+        # ── Track terminals: 1.2px radial lines at each end ──
         cr.set_line_width(1.2)
         cr.set_line_cap(cairo.LINE_CAP_BUTT)
-        cr.set_source_rgba(0.54, 0.59, 0.65, 0.35)  # dim steel
+        cr.set_source_rgba(*TERMINAL_COL)
         for term_angle in (start, end):
             x1 = cx + TRACK_INNER_R * math.cos(term_angle)
             y1 = cy + TRACK_INNER_R * math.sin(term_angle)
@@ -303,12 +351,12 @@ class FanGauge(Gtk.DrawingArea):
             x2 = cx + (TICK_OUTER_R - tick_len) * math.cos(angle)
             y2 = cy + (TICK_OUTER_R - tick_len) * math.sin(angle)
 
-            cr.set_source_rgba(0.54, 0.59, 0.65, 0.75 if is_major else 0.40)
+            cr.set_source_rgba(*(TICK_MAJ if is_major else TICK_MIN))
             cr.move_to(x1, y1)
             cr.line_to(x2, y2)
             cr.stroke()
 
-            # Labels at 0, 2.2k, 4.4k, 6.6k — anchored outward to clear arc
+            # Labels at 0, 2.2k, 4.4k, 6.6k
             if i in (0, 10, 20, 30):
                 label = "0" if rpm == 0 else f"{rpm/1000:.1f}k"
                 lx = cx + LABEL_R * math.cos(angle)
@@ -318,58 +366,54 @@ class FanGauge(Gtk.DrawingArea):
                                     cairo.FONT_WEIGHT_NORMAL)
                 cr.set_font_size(8.5)
                 extents = cr.text_extents(label)
-                cr.set_source_rgba(0.54, 0.59, 0.65, 0.8)
-                if i in (0, 10):          # left side → right-aligned
+                cr.set_source_rgba(*LABEL_COL)
+                if i in (0, 10):
                     ox = (lx - 3) - extents.x_bearing - extents.width
-                else:                      # right side → left-aligned
+                else:
                     ox = (lx + 3) - extents.x_bearing
                 cr.move_to(ox, ly + extents.height / 2)
                 cr.show_text(label)
 
-        # ── 3. Arc: 2° segments with 0.4° overlap, OPAQUE color-blend gradient ──
-        head_color = gauge_color_at(self.color, self.percent)
+        # ── 3. Arc: 2° segments with 0.4° overlap, OPAQUE color-blend ──
+        head_color = gauge_color_at(IDENTITY, self.percent)
         if self.percent > 0:
             arc_end = start + span * self.percent / 100
             drawn_span = arc_end - start
 
             segment_span = math.radians(2)
             overlap = math.radians(0.4)
-            track_col = (0.071, 0.086, 0.106)  # #12161B
             angle = start
             while angle < arc_end:
                 seg_end = min(angle + segment_span, arc_end)
                 seg_centre = (angle + seg_end) / 2.0
                 t = (seg_centre - start) / drawn_span if drawn_span > 0 else 0
 
-                # Blend factor: 0.55 at tail, 1.0 at head
                 blend = 0.55 + 0.45 * t
 
-                # Color = lerp(track, head_color, blend) — always opaque
-                r = track_col[0] + (head_color[0] - track_col[0]) * blend
-                g = track_col[1] + (head_color[1] - track_col[1]) * blend
-                b = track_col[2] + (head_color[2] - track_col[2]) * blend
+                r = ARC_BASE_COL[0] + (head_color[0] - ARC_BASE_COL[0]) * blend
+                g = ARC_BASE_COL[1] + (head_color[1] - ARC_BASE_COL[1]) * blend
+                b = ARC_BASE_COL[2] + (head_color[2] - ARC_BASE_COL[2]) * blend
 
-                # White-lightening at high load (last 15% of arc)
-                if self.percent > 85 and t > 0.85:
+                # White-lightening only in dark mode (last 15% of arc)
+                if LIGHTEN_HEAD and self.percent > 85 and t > 0.85:
                     lt = (t - 0.85) / 0.15 * 0.1
                     r = r + (1.0 - r) * lt
                     g = g + (1.0 - g) * lt
                     b = b + (1.0 - b) * lt
 
-                # Overlap each segment by 0.4° on each side (harmless when opaque)
                 draw_start = max(start, angle - overlap)
                 draw_end = min(arc_end, seg_end + overlap)
 
                 cr.set_line_width(10)
                 cr.set_line_cap(cairo.LINE_CAP_BUTT)
-                cr.set_source_rgba(r, g, b, 1.0)  # FULLY OPAQUE — no ribbing
+                cr.set_source_rgba(r, g, b, 1.0)
                 cr.new_path()
                 cr.arc(cx, cy, ARC_R, draw_start, draw_end)
                 cr.stroke()
 
                 angle = seg_end
 
-            # Localized glow at head: last 12% of drawn arc, two thin layers
+            # Localized glow at head: last 12% of drawn arc
             glow_start = arc_end - drawn_span * 0.12
             if glow_start > start:
                 gi = self.percent / 100.0
@@ -381,53 +425,49 @@ class FanGauge(Gtk.DrawingArea):
                     cr.arc(cx, cy, ARC_R, glow_start, arc_end)
                     cr.stroke()
 
-        # ── 4. Tip marker: outside the band at ARC_R+6, only when running ──
+        # ── 4. Tip marker: outside the band, only when running ──
         if self.percent > 0:
             tip_angle = start + span * self.percent / 100
-            tip_r = ARC_R + 6  # Just outside 10px track, inside tick ring
+            tip_r = ARC_R + 6
             tx = cx + tip_r * math.cos(tip_angle)
             ty = cy + tip_r * math.sin(tip_angle)
-            # Dark outline (1px ring around 2.1px dot = 3.1px total radius)
-            cr.set_source_rgba(0.031, 0.035, 0.043, 0.9)  # rgba(8,9,11,0.9)
+            # Dark outline
+            cr.set_source_rgba(*TIP_OUTLINE)
             cr.new_path()
             cr.arc(tx, ty, 3.1, 0, 2 * math.pi)
             cr.fill()
-            # Dot filled with identity colour (near-white at load > 85%)
-            if self.percent > 85:
+            # Dot: identity color (no white-lightening in light mode)
+            if LIGHTEN_HEAD and self.percent > 85:
                 lt = 0.1
-                dot_r = self.color[0] + (1.0 - self.color[0]) * lt
-                dot_g = self.color[1] + (1.0 - self.color[1]) * lt
-                dot_b = self.color[2] + (1.0 - self.color[2]) * lt
+                dot_r = IDENTITY[0] + (1.0 - IDENTITY[0]) * lt
+                dot_g = IDENTITY[1] + (1.0 - IDENTITY[1]) * lt
+                dot_b = IDENTITY[2] + (1.0 - IDENTITY[2]) * lt
                 cr.set_source_rgba(dot_r, dot_g, dot_b, 1.0)
             else:
-                cr.set_source_rgba(*self.color, 1.0)
+                cr.set_source_rgba(*IDENTITY, 1.0)
             cr.new_path()
             cr.arc(tx, ty, 2.1, 0, 2 * math.pi)
             cr.fill()
 
         # ── 5. Text hierarchy ──
-        # RPM value (hero)
         cr.select_font_face('DejaVu Sans Mono',
                             cairo.FONT_SLANT_NORMAL,
                             cairo.FONT_WEIGHT_NORMAL)
         cr.set_font_size(26)
-        cr.set_source_rgba(0.91, 0.93, 0.96, 1)   # #E8EEF5
+        cr.set_source_rgba(*RPM_COL)
         t = f'{self.rpm:,}'
         extents = cr.text_extents(t)
         cr.move_to(cx - extents.width/2 - extents.x_bearing, cy - 8)
         cr.show_text(t)
 
-        # "RPM" label (small caps, dim steel)
         cr.set_font_size(9)
-        cr.set_source_rgba(0.54, 0.59, 0.65, 1)   # #8A97A6
+        cr.set_source_rgba(*RPM_LBL)
         extents = cr.text_extents('RPM')
         cr.move_to(cx - extents.width/2 - extents.x_bearing, cy + 8)
         cr.show_text('RPM')
 
-        # Percentage in identity colour (constant brightness, >= 4.5:1 on
-        # every preset background — arc carries the load intensity instead)
         cr.set_font_size(11)
-        cr.set_source_rgb(*self.color)
+        cr.set_source_rgb(*PERCENT_COL)
         pt = f'{self.percent}%'
         extents = cr.text_extents(pt)
         cr.move_to(cx - extents.width/2 - extents.x_bearing, cy + 22)
@@ -624,7 +664,8 @@ def save_last_preset(key):
 class FanApp(Adw.Application):
     def __init__(self):
         super().__init__(application_id='com.hbwal.fancontrol')
-        Adw.StyleManager.get_default().set_color_scheme(Adw.ColorScheme.FORCE_DARK)
+        # Color scheme follows system by default; wrappers can override
+        # with FORCE_LIGHT/FORCE_DARK before importing fan_control.
         self.connect('activate', self.on_activate)
         self.manual_mode = False
         self._updating = False
@@ -661,6 +702,28 @@ class FanApp(Adw.Application):
             else:
                 self.win.remove_css_class(cls)
 
+    def _update_mode_class(self):
+        """Add mode-dark or mode-light class based on system appearance."""
+        if not hasattr(self, 'win') or self.win is None:
+            return
+        dark = Adw.StyleManager.get_default().get_dark()
+        if dark:
+            self.win.add_css_class('mode-dark')
+            self.win.remove_css_class('mode-light')
+        else:
+            self.win.add_css_class('mode-light')
+            self.win.remove_css_class('mode-dark')
+
+    def _on_dark_changed(self, manager, pspec):
+        """Handle system appearance change."""
+        self._update_mode_class()
+        dark = manager.get_dark()
+        # Update gauges
+        if hasattr(self, 'cpu_gauge'):
+            self.cpu_gauge.set_dark(dark)
+        if hasattr(self, 'gpu_gauge'):
+            self.gpu_gauge.set_dark(dark)
+
     def on_activate(self, app):
         # GApplication routes a second launch into this instance; present the
         # existing window instead of building a duplicate one.
@@ -672,6 +735,10 @@ class FanApp(Adw.Application):
         self.win.set_title('Fan Control')
         self.win.set_default_size(500, 600)
         self.win.set_resizable(False)
+
+        # Set initial mode class and track system appearance changes
+        self._update_mode_class()
+        Adw.StyleManager.get_default().connect('notify::dark', self._on_dark_changed)
 
         tb = Adw.ToolbarView()
         header = Adw.HeaderBar()
@@ -737,7 +804,11 @@ class FanApp(Adw.Application):
             hdr.append(badge)
             card.append(hdr)
 
-            gauge = FanGauge(CPU_COLOR if side=='cpu' else GPU_COLOR)
+            gauge = FanGauge(
+                CPU_COLOR if side=='cpu' else GPU_COLOR,
+                CPU_COLOR_LIGHT if side=='cpu' else GPU_COLOR_LIGHT,
+                CPU_PERCENT_LIGHT if side=='cpu' else GPU_PERCENT_LIGHT,
+            )
             gauge.set_halign(Gtk.Align.CENTER)
             card.append(gauge)
 
@@ -823,6 +894,10 @@ class FanApp(Adw.Application):
 
         tb.set_content(root)
         self.win.set_content(tb)
+        # Gauges are cairo-drawn: sync their palette with the system mode
+        dark = Adw.StyleManager.get_default().get_dark()
+        self.cpu_gauge.set_dark(dark)
+        self.gpu_gauge.set_dark(dark)
         self.win.present()
 
         self.update_preset_tooltips()
@@ -1020,6 +1095,8 @@ class FanApp(Adw.Application):
         dialog.set_content_height(680)
 
         tv = Adw.ToolbarView()
+        dark = Adw.StyleManager.get_default().get_dark()
+        tv.add_css_class('mode-dark' if dark else 'mode-light')
         hb = Adw.HeaderBar()
         dlg_title = Gtk.Label(label='Edit preset curves')
         dlg_title.add_css_class('heading')
@@ -1079,7 +1156,9 @@ class FanApp(Adw.Application):
             cpu_lbl.add_css_class('aw-label')
             cpu_lbl.set_margin_start(8)
             cpu_lbl.set_margin_top(6)
-            cpu_ed = CurveEditor(preset['cpu_curve'], CPU_COLOR)
+            cpu_ed = CurveEditor(preset['cpu_curve'], CPU_COLOR,
+                                 light_color=CPU_COLOR_LIGHT)
+            cpu_ed.set_dark(Adw.StyleManager.get_default().get_dark())
             cpu_card.append(cpu_lbl)
             cpu_card.append(cpu_ed)
             page.append(cpu_card)
@@ -1091,7 +1170,9 @@ class FanApp(Adw.Application):
             gpu_lbl.add_css_class('aw-label')
             gpu_lbl.set_margin_start(8)
             gpu_lbl.set_margin_top(6)
-            gpu_ed = CurveEditor(preset['gpu_curve'], GPU_COLOR)
+            gpu_ed = CurveEditor(preset['gpu_curve'], GPU_COLOR,
+                                 light_color=GPU_COLOR_LIGHT)
+            gpu_ed.set_dark(Adw.StyleManager.get_default().get_dark())
             gpu_card.append(gpu_lbl)
             gpu_card.append(gpu_ed)
             page.append(gpu_card)
